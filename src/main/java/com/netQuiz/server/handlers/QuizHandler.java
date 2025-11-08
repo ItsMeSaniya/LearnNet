@@ -93,7 +93,9 @@ public class QuizHandler {
                 case "SUBMIT_ANSWERS":
                     String userId = in.readUTF();
                     String submittedQuizId = in.readUTF();
-                    int[] answers = (int[]) new ObjectInputStream(socket.getInputStream()).readObject();
+                    // Read answers - ObjectInputStream reads from same underlying stream
+                    ObjectInputStream ois = new ObjectInputStream(in);
+                    int[] answers = (int[]) ois.readObject();
                     int score = calculateScore(submittedQuizId, answers);
                     scores.put(userId, score);
                     out.writeInt(score);

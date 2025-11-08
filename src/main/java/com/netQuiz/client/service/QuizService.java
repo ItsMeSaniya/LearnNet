@@ -43,22 +43,25 @@ public class QuizService {
     
     public int submitAnswers(String userId, String quizId, int[] answers) 
             throws IOException, ClassNotFoundException {
-        try (Socket socket = new Socket(Constants.SERVER_HOST, Constants.SERVER_PORT);
-             DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-             DataInputStream in = new DataInputStream(socket.getInputStream())) {
+        try (Socket socket = new Socket(Constants.SERVER_HOST, Constants.SERVER_PORT)) {
+            
+            OutputStream out = socket.getOutputStream();
+            DataOutputStream dos = new DataOutputStream(out);
             
             // Send request type
-            out.writeUTF(Constants.QUIZ_REQUEST);
-            out.writeUTF("SUBMIT_ANSWERS");
-            out.writeUTF(userId);
-            out.writeUTF(quizId);
-            out.flush();
+            dos.writeUTF(Constants.QUIZ_REQUEST);
+            dos.writeUTF("SUBMIT_ANSWERS");
+            dos.writeUTF(userId);
+            dos.writeUTF(quizId);
             
-            ObjectOutputStream oos = new ObjectOutputStream(socket.getOutputStream());
+            // Now send answers using ObjectOutputStream on same stream
+            ObjectOutputStream oos = new ObjectOutputStream(out);
             oos.writeObject(answers);
             oos.flush();
             
-            return in.readInt();
+            // Read response
+            DataInputStream dis = new DataInputStream(socket.getInputStream());
+            return dis.readInt();
         }
     }
 }

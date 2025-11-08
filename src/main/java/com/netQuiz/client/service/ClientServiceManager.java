@@ -35,18 +35,22 @@ public class ClientServiceManager {
     }
     
     public void connectChat() {
+        connectChat(message -> System.out.println("Chat message: " + message.getContent()));
+    }
+    
+    /**
+     * Connect chat and register a message handler to receive incoming messages.
+     */
+    public void connectChat(java.util.function.Consumer<com.netQuiz.shared.Message> messageHandler) {
         if (username != null) {
             try {
-                // Connect to chat with username and message handler
-                chatService.connect(username, message -> {
-                    System.out.println("Chat message: " + message.getContent());
-                });
+                chatService.connect(username, messageHandler);
             } catch (Exception e) {
                 System.err.println("Chat connection error: " + e.getMessage());
             }
         }
     }
-    
+
     public QuizService getQuizService() {
         return quizService;
     }
