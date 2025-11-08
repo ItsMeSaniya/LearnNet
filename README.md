@@ -1,4 +1,4 @@
-# NetQuiz - Multi-User Quiz & Communication Platform
+# LearnNet - Multi-User Quiz & Communication Platform
 
 A comprehensive Java networking application demonstrating TCP/UDP sockets, multi-threading, NIO, and JavaFX GUI.
 
