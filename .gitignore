@@ -36,3 +36,10 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+.idea
+
+### NetQuiz Application Files ###
+server_files/
+quizzes.json
+*.log
