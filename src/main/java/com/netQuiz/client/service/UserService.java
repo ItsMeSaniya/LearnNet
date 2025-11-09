@@ -110,6 +110,7 @@ public class UserService {
         try {
             while (running && !Thread.currentThread().isInterrupted()) {
                 String messageType = in.readUTF();
+                System.out.println("[UserService] Received message type: " + messageType);
 
                 switch (messageType) {
                     case "USER_LIST":
@@ -119,6 +120,7 @@ public class UserService {
                         for (int i = 0; i < count; i++) {
                             users.add(in.readUTF());
                         }
+                        System.out.println("[UserService] Received user list with " + count + " users: " + users);
                         if (userListHandler != null) {
                             userListHandler.accept(users);
                         }

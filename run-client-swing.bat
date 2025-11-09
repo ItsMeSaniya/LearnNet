@@ -4,7 +4,6 @@ echo NetQuiz Swing Client Launcher
 echo ================================================
 echo.
 echo Starting Swing client...
-echo Make sure the server is running first!
 echo.
 
 mvn exec:java -Dexec.mainClass=com.netQuiz.client.swing.SwingClientApp

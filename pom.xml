@@ -12,22 +12,9 @@
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <javafx.version>21.0.1</javafx.version>
     </properties>
 
     <dependencies>
-        <!-- JavaFX Dependencies -->
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-controls</artifactId>
-            <version>${javafx.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-fxml</artifactId>
-            <version>${javafx.version}</version>
-        </dependency>
-        
         <!-- JSON Processing -->
         <dependency>
             <groupId>com.google.code.gson</groupId>
@@ -44,11 +31,11 @@
                 <version>3.11.0</version>
             </plugin>
             <plugin>
-                <groupId>org.openjfx</groupId>
-                <artifactId>javafx-maven-plugin</artifactId>
-                <version>0.0.8</version>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.6.2</version>
                 <configuration>
-                    <mainClass>com.netQuiz.client.ClientApp</mainClass>
+                    <mainClass>com.netQuiz.client.swing.SwingClientApp</mainClass>
                 </configuration>
             </plugin>
         </plugins>

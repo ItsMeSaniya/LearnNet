@@ -39,6 +39,7 @@ public class ChatHandler implements Runnable {
     public void addClient(Socket socket, DataInputStream in, DataOutputStream out) {
         ChatClientHandler handler = new ChatClientHandler(socket, in, out);
         clients.add(handler);
+        System.out.println("[CHAT] Added new client. Total clients now: " + clients.size());
         Thread thread = new Thread(handler);
         thread.setDaemon(true);
         thread.start();
@@ -53,52 +54,53 @@ public class ChatHandler implements Runnable {
 
     private void broadcast(Message message, ChatClientHandler sender) {
         System.out.println("[CHAT] Broadcasting from " + message.getSender() + ": " + message.getContent());
+        System.out.println("[CHAT] Broadcasting to " + clients.size() + " clients");
         for (ChatClientHandler client : clients) {
-            if (client != sender) {
-                client.sendMessage(message);
-            }
+            // Send to all clients including sender (client can filter if needed)
+            System.out.println("[CHAT] Sending to client: " + client.username);
+            client.sendMessage(message);
         }
     }
 
     private class ChatClientHandler implements Runnable {
         private Socket socket;
-        private ObjectOutputStream out;
-        private ObjectInputStream in;
+        private DataOutputStream out;
+        private DataInputStream in;
         private String username;
 
         public ChatClientHandler(Socket socket, DataInputStream dataIn, DataOutputStream dataOut) {
             this.socket = socket;
-            try {
-                this.out = new ObjectOutputStream(dataOut);
-                this.in = new ObjectInputStream(dataIn);
-            } catch (IOException e) {
-                System.err.println("[CHAT] Error creating streams: " + e.getMessage());
-            }
+            this.in = dataIn;
+            this.out = dataOut;
         }
 
         @Override
         public void run() {
             try {
-                // Read username
-                Message loginMessage = (Message) in.readObject();
-                if (loginMessage.getType() == Message.MessageType.LOGIN) {
-                    username = loginMessage.getSender();
+                // Read initial CONNECT command and username
+                String command = in.readUTF();
+                if ("CONNECT".equals(command)) {
+                    username = in.readUTF();
                     System.out.println("[CHAT] User joined: " + username);
                     
                     // Broadcast join message
-                    Message joinMessage = new Message(Message.MessageType.CHAT, "Server", 
-                                                     username + " has joined the chat");
+                    Message joinMessage = new Message(username + " has joined the chat", "Server", System.currentTimeMillis());
                     broadcast(joinMessage, this);
                 }
 
                 // Listen for messages
-                while (running) {
+                while (running && !socket.isClosed()) {
                     try {
-                        Message message = (Message) in.readObject();
+                        String msgCommand = in.readUTF();
+                        System.out.println("[CHAT] Received command from " + username + ": " + msgCommand);
                         
-                        if (message.getType() == Message.MessageType.CHAT) {
+                        if ("MESSAGE".equals(msgCommand)) {
+                            String sender = in.readUTF();
+                            String content = in.readUTF();
+                            System.out.println("[CHAT] Message from " + sender + ": " + content);
+                            Message message = new Message(sender, content, System.currentTimeMillis());
                             broadcast(message, this);
-                        } else if (message.getType() == Message.MessageType.LOGOUT) {
+                        } else if ("DISCONNECT".equals(msgCommand)) {
                             break;
                         }
                     } catch (EOFException e) {
@@ -106,8 +108,10 @@ public class ChatHandler implements Runnable {
                     }
                 }
 
-            } catch (IOException | ClassNotFoundException e) {
-                System.err.println("[CHAT] Client error: " + e.getMessage());
+            } catch (IOException e) {
+                if (running) {
+                    System.err.println("[CHAT] Client error: " + e.getMessage());
+                }
             } finally {
                 cleanup();
             }
@@ -115,12 +119,25 @@ public class ChatHandler implements Runnable {
 
         public void sendMessage(Message message) {
             try {
+                if (out == null) {
+                    System.err.println("[CHAT] ERROR: Output stream is null for " + username);
+                    return;
+                }
+                if (socket == null || socket.isClosed()) {
+                    System.err.println("[CHAT] ERROR: Socket is closed for " + username);
+                    return;
+                }
+                
                 synchronized (out) {
-                    out.writeObject(message);
+                    out.writeUTF(message.getSender());
+                    out.writeUTF(message.getContent());
+                    out.writeLong(message.getTimestamp());
                     out.flush();
+                    System.out.println("[CHAT] Successfully sent message to " + username);
                 }
             } catch (IOException e) {
                 System.err.println("[CHAT] Error sending to " + username + ": " + e.getMessage());
+                e.printStackTrace();
             }
         }
 
@@ -138,8 +155,7 @@ public class ChatHandler implements Runnable {
             clients.remove(this);
             if (username != null) {
                 System.out.println("[CHAT] User left: " + username);
-                Message leaveMessage = new Message(Message.MessageType.CHAT, "Server", 
-                                                   username + " has left the chat");
+                Message leaveMessage = new Message("Server", username + " has left the chat", System.currentTimeMillis());
                 broadcast(leaveMessage, this);
             }
             close();
