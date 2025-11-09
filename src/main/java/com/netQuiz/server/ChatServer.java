@@ -7,11 +7,11 @@ import java.util.concurrent.*;
 
 /**
  * ChatServer - Multithreaded chat server that handles multiple clients
- * Port: 5002
+ * Port: 5004
  * Uses ExecutorService for thread management
  */
 public class ChatServer {
-    private static final int PORT = 5002;
+    private static final int PORT = 5004; // Chat port
     private static Set<ClientHandler> clientHandlers = ConcurrentHashMap.newKeySet();
     private static ExecutorService pool = Executors.newCachedThreadPool();
 

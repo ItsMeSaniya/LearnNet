@@ -1,6 +1,7 @@
 package com.netQuiz.client.controller;
 
 import com.netQuiz.client.service.*;
+import com.netQuiz.client.util.MessageFormatter;
 import com.netQuiz.shared.FileInfo;
 import com.netQuiz.shared.Message;
 import com.netQuiz.shared.Quiz;
@@ -37,6 +38,7 @@ public class MainController {
     
     // Users Tab
     @FXML private ListView<String> userListView;
+    @FXML private Button sendPrivateMessageButton;
     
     // Notifications Tab
     @FXML private TextArea notificationArea;
@@ -72,6 +74,7 @@ public class MainController {
         
         // Setup Users
         userListView.setItems(userList);
+        setupUserListContextMenu();
         loadOnlineUsers();
         
         // Setup Notifications
@@ -79,12 +82,37 @@ public class MainController {
     }
     
     private void setupChat() {
+        // The chat is already connected from LoginController
+        // We need to update the message handler to show messages in the UI
         ChatService chatService = serviceManager.getChatService();
         
-        // Chat service is already connected in ClientServiceManager.setUsername()
-        // Just set the message handler if needed
+        // Set up message handler for incoming messages
+        chatService.setMessageHandler(msg -> {
+            Platform.runLater(() -> {
+                // Handle different message types
+                if (msg.getType() == Message.MessageType.USER_LIST) {
+                    // Update user list
+                    String[] users = msg.getContent().split(",");
+                    updateUserList(java.util.Arrays.asList(users));
+                } else if (msg.getType() == Message.MessageType.PRIVATE_CHAT) {
+                    // Display private message
+                    String formattedMsg = MessageFormatter.formatPrivateMessage(msg) + "\n";
+                    chatArea.appendText(formattedMsg);
+                    chatArea.setScrollTop(Double.MAX_VALUE);
+                } else {
+                    // Display regular chat message
+                    String formattedMsg = MessageFormatter.formatIncomingMessage(msg) + "\n";
+                    chatArea.appendText(formattedMsg);
+                    chatArea.setScrollTop(Double.MAX_VALUE);
+                }
+            });
+        });
         
+        // Allow Enter key to send message
         chatMessageField.setOnAction(e -> handleSendChat());
+        
+        // Welcome message using formatter
+        chatArea.appendText(MessageFormatter.createWelcomeBanner(serviceManager.getUsername()));
     }
     
     private void setupNotifications() {
@@ -104,9 +132,13 @@ public class MainController {
         if (!message.isEmpty()) {
             try {
                 serviceManager.getChatService().sendMessage(serviceManager.getUsername(), message);
+                
+                // Display sent message using formatter
                 Platform.runLater(() -> {
-                    chatArea.appendText("You: " + message + "\n");
+                    chatArea.appendText(MessageFormatter.formatOutgoingMessage(message) + "\n");
+                    chatArea.setScrollTop(Double.MAX_VALUE);
                 });
+                
                 chatMessageField.clear();
             } catch (Exception e) {
                 showAlert("Error", "Failed to send message: " + e.getMessage());
@@ -310,7 +342,72 @@ public class MainController {
     public void updateUserList(List<String> users) {
         Platform.runLater(() -> {
             userList.clear();
-            userList.addAll(users);
+            for (String user : users) {
+                if (!user.trim().isEmpty() && !user.equals(serviceManager.getUsername())) {
+                    userList.add(user);
+                }
+            }
+        });
+    }
+    
+    private void setupUserListContextMenu() {
+        ContextMenu contextMenu = new ContextMenu();
+        MenuItem sendPrivateMsg = new MenuItem("Send Private Message");
+        
+        sendPrivateMsg.setOnAction(e -> {
+            String selectedUser = userListView.getSelectionModel().getSelectedItem();
+            if (selectedUser != null) {
+                handleSendPrivateMessage(selectedUser);
+            }
+        });
+        
+        contextMenu.getItems().add(sendPrivateMsg);
+        
+        userListView.setOnMouseClicked(event -> {
+            if (event.getButton() == javafx.scene.input.MouseButton.SECONDARY) {
+                if (userListView.getSelectionModel().getSelectedItem() != null) {
+                    contextMenu.show(userListView, event.getScreenX(), event.getScreenY());
+                }
+            }
+        });
+    }
+    
+    @FXML
+    private void handleSendPrivateMessage() {
+        String selectedUser = userListView.getSelectionModel().getSelectedItem();
+        if (selectedUser != null) {
+            handleSendPrivateMessage(selectedUser);
+        } else {
+            showAlert("No User Selected", "Please select a user to send a private message.");
+        }
+    }
+    
+    private void handleSendPrivateMessage(String recipient) {
+        TextInputDialog dialog = new TextInputDialog();
+        dialog.setTitle("Private Message");
+        dialog.setHeaderText("Send private message to " + recipient);
+        dialog.setContentText("Message:");
+        
+        Optional<String> result = dialog.showAndWait();
+        result.ifPresent(message -> {
+            if (!message.trim().isEmpty()) {
+                try {
+                    serviceManager.getChatService().sendPrivateMessage(
+                        serviceManager.getUsername(), recipient, message);
+                    
+                    // Display sent private message
+                    Platform.runLater(() -> {
+                        String formattedMsg = String.format("[%s] 💬 Private to %s: %s\n",
+                            java.time.LocalTime.now().format(
+                                java.time.format.DateTimeFormatter.ofPattern("HH:mm:ss")),
+                            recipient, message);
+                        chatArea.appendText(formattedMsg);
+                        chatArea.setScrollTop(Double.MAX_VALUE);
+                    });
+                } catch (Exception e) {
+                    showAlert("Error", "Failed to send private message: " + e.getMessage());
+                }
+            }
         });
     }
     

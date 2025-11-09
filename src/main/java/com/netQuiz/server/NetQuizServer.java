@@ -10,7 +10,7 @@ import java.net.Socket;
 
 /**
  * Main Server Application - Single Port Architecture  
- * All TCP services run on port 5000, UDP notifications on port 5001
+ * All TCP services run on port 5002, UDP notifications on port 5001
  * Routes client requests to appropriate handler module
  */
 public class NetQuizServer {
@@ -90,11 +90,12 @@ public class NetQuizServer {
         System.out.println("               NetQuiz Multi-Module Server");
         System.out.println("=".repeat(70));
         System.out.println("  Main Server Port (TCP):        " + Constants.SERVER_PORT);
+        System.out.println("  Chat Server Port (TCP):        " + Constants.CHAT_PORT);
         System.out.println("  Notifications Port (UDP):      " + Constants.UDP_NOTIFICATION_PORT);
         System.out.println("=".repeat(70));
         System.out.println("\n  ✓ Module 1: Quiz System          (TCP + Multi-threading)");
         System.out.println("  ✓ Module 2: File Sharing         (TCP + Buffered I/O)");
-        System.out.println("  ✓ Module 3: Real-Time Chat       (TCP + Broadcasting)");
+        System.out.println("  ✓ Module 3: Real-Time Chat       (Dedicated Port + Object Streams)");
         System.out.println("  ✓ Module 4: User Management      (Request-based)");
         System.out.println("  ✓ Module 5: Notifications        (UDP Broadcasting)");
         System.out.println("\n" + "=".repeat(70));
@@ -138,12 +139,6 @@ public class NetQuizServer {
                     case Constants.FILE_REQUEST:
                         fileHandler.handleRequest(socket, in, out);
                         socket.close();
-                        break;
-                        
-                    case Constants.CHAT_REQUEST:
-                        // Chat needs persistent connection - hand off to chat handler
-                        chatHandler.addClient(socket, in, out);
-                        // Don't close socket - chat handler manages it
                         break;
                         
                     case Constants.USER_REQUEST:

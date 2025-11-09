@@ -8,16 +8,26 @@ public class Message implements Serializable {
     private MessageType type;
     private String sender;
     private String content;
+    private String recipient; // For private messages
     private long timestamp;
     
     public enum MessageType {
-        CHAT, LOGIN, LOGOUT, USER_LIST, QUIZ_REQUEST, QUIZ_RESPONSE, 
+        CHAT, PRIVATE_CHAT, LOGIN, LOGOUT, USER_LIST, QUIZ_REQUEST, QUIZ_RESPONSE, 
         FILE_UPLOAD, FILE_DOWNLOAD, FILE_LIST, NOTIFICATION, ANSWER_SUBMIT, SCORE
     }
     
     public Message(MessageType type, String sender, String content) {
         this.type = type;
         this.sender = sender;
+        this.content = content;
+        this.recipient = null;
+        this.timestamp = System.currentTimeMillis();
+    }
+    
+    public Message(MessageType type, String sender, String recipient, String content) {
+        this.type = type;
+        this.sender = sender;
+        this.recipient = recipient;
         this.content = content;
         this.timestamp = System.currentTimeMillis();
     }
@@ -26,6 +36,7 @@ public class Message implements Serializable {
         this.type = MessageType.CHAT;
         this.sender = sender;
         this.content = content;
+        this.recipient = null;
         this.timestamp = timestamp;
     }
     
@@ -59,5 +70,13 @@ public class Message implements Serializable {
     
     public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
+    }
+    
+    public String getRecipient() {
+        return recipient;
+    }
+    
+    public void setRecipient(String recipient) {
+        this.recipient = recipient;
     }
 }

@@ -1,0 +1,127 @@
+/* NetQuiz Application Styles */
+
+/* Chat Area Styling */
+.chat-area {
+    -fx-font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    -fx-font-size: 13px;
+    -fx-control-inner-background: #f8f9fa;
+    -fx-text-fill: #2c3e50;
+}
+
+/* Message Input Field */
+.message-input {
+    -fx-font-size: 14px;
+    -fx-padding: 8px;
+    -fx-border-color: #3498db;
+    -fx-border-radius: 5px;
+    -fx-background-radius: 5px;
+}
+
+.message-input:focused {
+    -fx-border-color: #2980b9;
+    -fx-border-width: 2px;
+}
+
+/* Send Button */
+.send-button {
+    -fx-background-color: #3498db;
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-padding: 10px 20px;
+    -fx-background-radius: 5px;
+    -fx-cursor: hand;
+}
+
+.send-button:hover {
+    -fx-background-color: #2980b9;
+}
+
+.send-button:pressed {
+    -fx-background-color: #21618c;
+}
+
+/* Action Buttons */
+.action-button {
+    -fx-background-radius: 5px;
+    -fx-padding: 8px 16px;
+    -fx-cursor: hand;
+}
+
+.upload-button {
+    -fx-background-color: #3498db;
+    -fx-text-fill: white;
+}
+
+.upload-button:hover {
+    -fx-background-color: #2980b9;
+}
+
+.download-button {
+    -fx-background-color: #27ae60;
+    -fx-text-fill: white;
+}
+
+.download-button:hover {
+    -fx-background-color: #229954;
+}
+
+.refresh-button {
+    -fx-background-color: #95a5a6;
+    -fx-text-fill: white;
+}
+
+.refresh-button:hover {
+    -fx-background-color: #7f8c8d;
+}
+
+.quiz-button {
+    -fx-background-color: #27ae60;
+    -fx-text-fill: white;
+}
+
+.quiz-button:hover {
+    -fx-background-color: #229954;
+}
+
+/* List Views */
+.list-view {
+    -fx-background-color: white;
+    -fx-border-color: #dfe6e9;
+    -fx-border-radius: 5px;
+}
+
+.list-view .list-cell {
+    -fx-padding: 8px;
+}
+
+.list-view .list-cell:selected {
+    -fx-background-color: #3498db;
+    -fx-text-fill: white;
+}
+
+/* Tab Styling */
+.tab-pane .tab {
+    -fx-font-size: 14px;
+    -fx-padding: 10px 20px;
+}
+
+.tab-pane .tab:selected {
+    -fx-background-color: #3498db;
+}
+
+/* Headers */
+.section-header {
+    -fx-font-size: 18px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #2c3e50;
+    -fx-padding: 5px 0;
+}
+
+/* Notification Area */
+.notification-area {
+    -fx-font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    -fx-font-size: 12px;
+    -fx-control-inner-background: #ecf0f1;
+    -fx-text-fill: #34495e;
+}

@@ -27,13 +27,16 @@
                     <Label text="Real-Time Chat" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
                     
                     <TextArea fx:id="chatArea" editable="false" wrapText="true" 
-                              VBox.vgrow="ALWAYS" style="-fx-font-family: 'Courier New';"/>
+                              VBox.vgrow="ALWAYS" 
+                              style="-fx-font-family: 'Courier New'; -fx-font-size: 13px; -fx-control-inner-background: #f8f9fa;"/>
                     
-                    <HBox spacing="10">
-                        <TextField fx:id="chatMessageField" promptText="Type your message..." 
-                                   HBox.hgrow="ALWAYS"/>
+                    <HBox spacing="10" alignment="CENTER_LEFT">
+                        <TextField fx:id="chatMessageField" promptText="Type your message and press Enter..." 
+                                   HBox.hgrow="ALWAYS"
+                                   style="-fx-font-size: 14px;"/>
                         <Button fx:id="sendChatButton" text="Send" onAction="#handleSendChat" 
-                                prefWidth="80" style="-fx-background-color: #3498db; -fx-text-fill: white;"/>
+                                prefWidth="100" prefHeight="35"
+                                style="-fx-background-color: #3498db; -fx-text-fill: white; -fx-font-size: 14px; -fx-font-weight: bold;"/>
                     </HBox>
                 </VBox>
             </Tab>
@@ -100,8 +103,14 @@
                     </padding>
                     
                     <Label text="Online Users" style="-fx-font-size: 18px; -fx-font-weight: bold;"/>
+                    <Label text="Right-click on a user to send a private message" 
+                           style="-fx-text-fill: #7f8c8d; -fx-font-size: 12px;"/>
                     
                     <ListView fx:id="userListView" VBox.vgrow="ALWAYS"/>
+                    
+                    <Button fx:id="sendPrivateMessageButton" text="Send Private Message" 
+                            onAction="#handleSendPrivateMessage"
+                            style="-fx-background-color: #9b59b6; -fx-text-fill: white;"/>
                 </VBox>
             </Tab>
             

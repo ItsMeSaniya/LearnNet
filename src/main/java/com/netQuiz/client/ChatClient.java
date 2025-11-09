@@ -10,7 +10,7 @@ import java.net.*;
  */
 public class ChatClient {
     private static final String SERVER_ADDRESS = "localhost";
-    private static final int SERVER_PORT = 5002;
+    private static final int SERVER_PORT = 5004; // Chat port
 
     public static void main(String[] args) {
         System.out.println("=================================");

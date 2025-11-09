@@ -80,7 +80,7 @@ public class ConsoleClient {
 
         } catch (IOException e) {
             System.err.println("❌ Connection error: " + e.getMessage());
-            System.err.println("Make sure the server is running on port 5002");
+            System.err.println("Make sure the server is running on ports 5002 (main) and 5004 (chat)");
         }
     }
 

@@ -3,6 +3,7 @@ package com.netQuiz.shared;
 public class Constants {
     public static final String SERVER_HOST = "localhost";
     public static final int SERVER_PORT = 5002; // Single port for all TCP operations (changed from 5000)
+    public static final int CHAT_PORT = 5004; // Dedicated port for chat with object streams
     public static final int UDP_NOTIFICATION_PORT = 5003; // Separate UDP port for broadcasts (changed from 5001)
 
     public static final int BUFFER_SIZE = 8192;
