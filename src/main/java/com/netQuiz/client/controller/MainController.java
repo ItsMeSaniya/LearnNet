@@ -342,9 +342,14 @@ public class MainController {
     public void updateUserList(List<String> users) {
         Platform.runLater(() -> {
             userList.clear();
+            String currentUser = serviceManager.getUsername();
             for (String user : users) {
-                if (!user.trim().isEmpty() && !user.equals(serviceManager.getUsername())) {
-                    userList.add(user);
+                if (!user.trim().isEmpty()) {
+                    if (user.equals(currentUser)) {
+                        userList.add(user + " (me)");
+                    } else {
+                        userList.add(user);
+                    }
                 }
             }
         });
@@ -356,7 +361,7 @@ public class MainController {
         
         sendPrivateMsg.setOnAction(e -> {
             String selectedUser = userListView.getSelectionModel().getSelectedItem();
-            if (selectedUser != null) {
+            if (selectedUser != null && !selectedUser.endsWith(" (me)")) {
                 handleSendPrivateMessage(selectedUser);
             }
         });
@@ -365,7 +370,8 @@ public class MainController {
         
         userListView.setOnMouseClicked(event -> {
             if (event.getButton() == javafx.scene.input.MouseButton.SECONDARY) {
-                if (userListView.getSelectionModel().getSelectedItem() != null) {
+                String selectedUser = userListView.getSelectionModel().getSelectedItem();
+                if (selectedUser != null && !selectedUser.endsWith(" (me)")) {
                     contextMenu.show(userListView, event.getScreenX(), event.getScreenY());
                 }
             }
@@ -375,8 +381,10 @@ public class MainController {
     @FXML
     private void handleSendPrivateMessage() {
         String selectedUser = userListView.getSelectionModel().getSelectedItem();
-        if (selectedUser != null) {
+        if (selectedUser != null && !selectedUser.endsWith(" (me)")) {
             handleSendPrivateMessage(selectedUser);
+        } else if (selectedUser != null && selectedUser.endsWith(" (me)")) {
+            showAlert("Cannot Send", "You cannot send a private message to yourself.");
         } else {
             showAlert("No User Selected", "Please select a user to send a private message.");
         }
