@@ -69,14 +69,20 @@ public class LoginSwing extends JFrame {
         new Thread(() -> {
             try {
                 serviceManager.setUsername(username);
-                boolean success = serviceManager.getUserService().login(username, "password", null);
+                
+                // Create main window first (but don't show it yet)
+                MainSwing main = new MainSwing();
+                
+                // Login with user list update handler
+                boolean success = serviceManager.getUserService().login(
+                    username, 
+                    "password", 
+                    users -> main.updateUserList(users),  // User list handler
+                    msg -> System.out.println("[System] " + msg)  // Message handler
+                );
 
                 if (success) {
-                    // connect chat with UI handler later in main window
-                    serviceManager.connectChat(msg -> System.out.println("[chat] " + msg.getContent()));
-
                     javax.swing.SwingUtilities.invokeLater(() -> {
-                        MainSwing main = new MainSwing();
                         main.setLocationRelativeTo(null);
                         main.setVisible(true);
                         dispose();

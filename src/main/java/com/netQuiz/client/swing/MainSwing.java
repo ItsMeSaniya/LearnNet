@@ -78,11 +78,24 @@ public class MainSwing extends JFrame {
 
         // Register chat handler to append messages
         serviceManager.connectChat(msg -> SwingUtilities.invokeLater(() -> {
-            chatArea.append(msg.getSender() + ": " + msg.getContent() + "\n");
+            // Filter out own messages (already displayed as "You: ...")
+            if (!msg.getSender().equals(serviceManager.getUsername())) {
+                chatArea.append(msg.getSender() + ": " + msg.getContent() + "\n");
+            }
         }));
 
         // Load initial lists asynchronously
         loadInitialData();
+    }
+    
+    /**
+     * Update user list - called when server broadcasts user list updates
+     */
+    public void updateUserList(List<String> users) {
+        SwingUtilities.invokeLater(() -> {
+            userListModel.clear();
+            users.forEach(userListModel::addElement);
+        });
     }
 
     private void loadInitialData() {
@@ -103,13 +116,8 @@ public class MainSwing extends JFrame {
                 });
             } catch (Exception ignored) {}
 
-            try {
-                List<String> users = serviceManager.getUserService().getOnlineUsers();
-                SwingUtilities.invokeLater(() -> {
-                    userListModel.clear();
-                    users.forEach(userListModel::addElement);
-                });
-            } catch (Exception ignored) {}
+            // User list is automatically updated via the userListHandler registered during login
+            // No need to fetch it here
         }).start();
     }
 
