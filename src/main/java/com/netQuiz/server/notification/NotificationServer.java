@@ -1,21 +1,13 @@
 package com.netQuiz.server.notification;
 
 import com.netQuiz.shared.Constants;
-
 import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
+import java.net.*;
 import java.nio.charset.StandardCharsets;
+import java.util.Enumeration;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-/**
- * Member 5 – Notification System / UDP Broadcaster
- * Sends announcements via UDP broadcast packets.
- * Clients listen on a specific port to receive updates (e.g., "New quiz added").
- * Demonstrates connectionless, lightweight communication.
- */
 public class NotificationServer implements Runnable {
     private DatagramSocket socket;
     private boolean running;
@@ -26,31 +18,56 @@ public class NotificationServer implements Runnable {
         this.running = false;
         this.messageQueue = new LinkedBlockingQueue<>();
         try {
-            this.broadcastAddress = InetAddress.getByName("255.255.255.255");
+            this.broadcastAddress = getBroadcastAddress();
+            System.out.println("[NOTIFY SERVER] Using broadcast address: " + broadcastAddress);
         } catch (IOException e) {
-            System.err.println("Error getting broadcast address: " + e.getMessage());
+            System.err.println("[NOTIFY SERVER] Error getting broadcast address: " + e.getMessage());
+            try {
+                this.broadcastAddress = InetAddress.getByName("255.255.255.255");
+                System.out.println("[NOTIFY SERVER] Fallback broadcast: 255.255.255.255");
+            } catch (Exception ignored) {
+            }
         }
+    }
+
+    private InetAddress getBroadcastAddress() throws IOException {
+        Enumeration<NetworkInterface> interfaces = NetworkInterface.getNetworkInterfaces();
+        while (interfaces.hasMoreElements()) {
+            NetworkInterface ni = interfaces.nextElement();
+            if (ni.isUp() && !ni.isLoopback()) {
+                for (InterfaceAddress address : ni.getInterfaceAddresses()) {
+                    InetAddress broadcast = address.getBroadcast();
+                    if (broadcast != null)
+                        return broadcast;
+                }
+            }
+        }
+        return InetAddress.getByName("255.255.255.255");
     }
 
     @Override
     public void run() {
         try {
-            socket = new DatagramSocket();
+            socket = new DatagramSocket(null);
+            socket.setReuseAddress(true);
+            socket.bind(new InetSocketAddress(Constants.UDP_NOTIFICATION_PORT));
             socket.setBroadcast(true);
+
             running = true;
-            System.out.println("Notification Server started (UDP Broadcasting)");
+            System.out.println("[NOTIFY SERVER] Started UDP broadcaster on port " + Constants.UDP_NOTIFICATION_PORT);
+
+            sendNotification("SERVER:Notification server started");
 
             while (running) {
                 try {
-                    // Wait for messages to broadcast
                     String message = messageQueue.take();
                     broadcastMessage(message);
-                } catch (InterruptedException e) {
-                    if (!running) break;
+                } catch (InterruptedException ignored) {
                 }
             }
+
         } catch (IOException e) {
-            System.err.println("Notification Server error: " + e.getMessage());
+            System.err.println("[NOTIFY SERVER] Socket error: " + e.getMessage());
         } finally {
             cleanup();
         }
@@ -59,13 +76,18 @@ public class NotificationServer implements Runnable {
     private void broadcastMessage(String message) {
         try {
             byte[] buffer = message.getBytes(StandardCharsets.UTF_8);
-            DatagramPacket packet = new DatagramPacket(buffer, buffer.length, 
-                                                       broadcastAddress, 
-                                                       Constants.UDP_NOTIFICATION_PORT);
+
+            // Force broadcast to all clients on local network
+            DatagramPacket packet = new DatagramPacket(
+                    buffer, buffer.length,
+                    InetAddress.getByName("255.255.255.255"),
+                    Constants.UDP_NOTIFICATION_PORT);
+
+            System.out.println("[NOTIFY SERVER] Broadcasting → " + message);
             socket.send(packet);
-            System.out.println("Broadcast notification: " + message);
+
         } catch (IOException e) {
-            System.err.println("Error broadcasting message: " + e.getMessage());
+            System.err.println("[NOTIFY SERVER] Failed to broadcast: " + e.getMessage());
         }
     }
 
@@ -73,22 +95,8 @@ public class NotificationServer implements Runnable {
         messageQueue.offer(message);
     }
 
-    public void stop() {
-        running = false;
-        if (socket != null && !socket.isClosed()) {
-            socket.close();
-        }
-    }
-
-    private void cleanup() {
-        if (socket != null && !socket.isClosed()) {
-            socket.close();
-        }
-    }
-
-    // Convenience methods for common notifications
-    public void notifyNewQuiz(String quizTitle) {
-        sendNotification("NEW_QUIZ:" + quizTitle);
+    public void notifyNewQuiz(String quizTitle, String creator) {
+        sendNotification("NEW_QUIZ:" + quizTitle + " by " + creator);
     }
 
     public void notifyNewFile(String fileName, String uploader) {
@@ -97,5 +105,24 @@ public class NotificationServer implements Runnable {
 
     public void notifySystemMessage(String message) {
         sendNotification("SYSTEM:" + message);
+    }
+
+    public void notifyUserLogin(String username) {
+        sendNotification("USER_LOGIN:" + username);
+    }
+
+    public void notifyUserLogout(String username) {
+        sendNotification("USER_LOGOUT:" + username);
+    }
+
+    public void testBroadcast() {
+        sendNotification("TEST:Hello from server at " + System.currentTimeMillis());
+    }
+
+    private void cleanup() {
+        if (socket != null && !socket.isClosed()) {
+            socket.close();
+        }
+        System.out.println("[NOTIFY SERVER] Shutdown complete.");
     }
 }

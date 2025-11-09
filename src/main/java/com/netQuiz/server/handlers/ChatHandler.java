@@ -1,5 +1,6 @@
 package com.netQuiz.server.handlers;
 
+import com.netQuiz.server.notification.NotificationServer;
 import com.netQuiz.shared.Message;
 
 import java.io.*;
@@ -7,16 +8,13 @@ import java.net.Socket;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Member 3 – Real-Time Chat Handler
- * Handles chat connections through unified server port
- * Runs as background service for persistent connections
- */
 public class ChatHandler implements Runnable {
     private Set<ChatClientHandler> clients;
     private boolean running;
+    private NotificationServer notificationServer;
 
-    public ChatHandler() {
+    public ChatHandler(NotificationServer notificationServer) {
+        this.notificationServer = notificationServer;
         this.clients = ConcurrentHashMap.newKeySet();
         this.running = false;
     }
@@ -25,7 +23,7 @@ public class ChatHandler implements Runnable {
     public void run() {
         running = true;
         System.out.println("[CHAT] Service started");
-        
+
         // Keep service running
         while (running) {
             try {
@@ -82,9 +80,15 @@ public class ChatHandler implements Runnable {
                 if ("CONNECT".equals(command)) {
                     username = in.readUTF();
                     System.out.println("[CHAT] User joined: " + username);
-                    
+
+                    // UDP Notification for JOIN event
+                    if (notificationServer != null) {
+                        notificationServer.sendNotification(username + " has joined the chat.");
+                    }
+
                     // Broadcast join message
-                    Message joinMessage = new Message(username + " has joined the chat", "Server", System.currentTimeMillis());
+                    Message joinMessage = new Message(username + " has joined the chat", "Server",
+                            System.currentTimeMillis());
                     broadcast(joinMessage, this);
                 }
 
@@ -93,13 +97,20 @@ public class ChatHandler implements Runnable {
                     try {
                         String msgCommand = in.readUTF();
                         System.out.println("[CHAT] Received command from " + username + ": " + msgCommand);
-                        
+
                         if ("MESSAGE".equals(msgCommand)) {
                             String sender = in.readUTF();
                             String content = in.readUTF();
                             System.out.println("[CHAT] Message from " + sender + ": " + content);
+
+                            // Send UDP notification
+                            if (notificationServer != null) {
+                                notificationServer.sendNotification(sender + " has sent a message.");
+                            }
+
                             Message message = new Message(sender, content, System.currentTimeMillis());
                             broadcast(message, this);
+
                         } else if ("DISCONNECT".equals(msgCommand)) {
                             break;
                         }
@@ -127,7 +138,7 @@ public class ChatHandler implements Runnable {
                     System.err.println("[CHAT] ERROR: Socket is closed for " + username);
                     return;
                 }
-                
+
                 synchronized (out) {
                     out.writeUTF(message.getSender());
                     out.writeUTF(message.getContent());
@@ -155,7 +166,13 @@ public class ChatHandler implements Runnable {
             clients.remove(this);
             if (username != null) {
                 System.out.println("[CHAT] User left: " + username);
-                Message leaveMessage = new Message("Server", username + " has left the chat", System.currentTimeMillis());
+
+                if (notificationServer != null) {
+                    notificationServer.sendNotification(username + " has left the chat.");
+                }
+
+                Message leaveMessage = new Message("Server", username + " has left the chat",
+                        System.currentTimeMillis());
                 broadcast(leaveMessage, this);
             }
             close();

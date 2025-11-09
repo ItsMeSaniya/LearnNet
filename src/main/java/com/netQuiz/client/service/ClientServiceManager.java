@@ -31,7 +31,14 @@ public class ClientServiceManager {
     
     public void setUsername(String username) {
         this.username = username;
-        // Chat will be connected after successful login
+     
+        // Register notification callback
+        notificationService.setNotificationCallback(
+            msg -> System.out.println("[NOTIFY CLIENT] " + msg)
+        );
+
+        // Start listening to server notifications
+        notificationService.startListening();
     }
     
     public void connectChat() {
