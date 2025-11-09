@@ -1,23 +1,3 @@
-# Chat Fix Applied - Testing Guide
-
-## 🔧 What Was Fixed
-
-**Problem:** "Broken Pipe" error when sending chat messages
-
-**Root Cause:** Protocol mismatch between client and server
-- Client was using `DataInputStream/DataOutputStream` with UTF strings
-- Server was expecting `ObjectInputStream/ObjectOutputStream` with Message objects
-
-**Solution:** Updated `ChatService.java` to use Object streams matching the server protocol
-
-## ✅ Changes Made
-
-### ChatService.java Updates:
-1. Changed streams from `DataInputStream/DataOutputStream` to `ObjectInputStream/ObjectOutputStream`
-2. Updated `connect()` to send initial `CHAT_REQUEST` then switch to object streams
-3. Updated `sendMessage()` to send Message objects instead of UTF strings
-4. Updated `receiveMessages()` to read Message objects
-5. Updated `disconnect()` to send LOGOUT message properly
 
 ## 🧪 Testing Steps
 
@@ -102,7 +82,7 @@ When clients connect and chat:
 - [x] Messages broadcast to all clients
 - [x] Join/leave notifications work
 
-## 🐛 If Issues Persist
+## 🐛 If any issue occured
 
 1. **Restart the server** - Make sure it's using the compiled code
 2. **Check server console** - Look for error messages
