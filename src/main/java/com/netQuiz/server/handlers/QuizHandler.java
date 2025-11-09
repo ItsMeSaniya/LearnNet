@@ -2,6 +2,7 @@ package com.netQuiz.server.handlers;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.netQuiz.server.notification.NotificationServer;
 import com.netQuiz.shared.Constants;
 import com.netQuiz.shared.Quiz;
 
@@ -10,16 +11,14 @@ import java.net.Socket;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Member 1 – Quiz Module Handler
- * Handles quiz requests through unified server port
- */
 public class QuizHandler {
     private Map<String, Quiz> quizzes;
     private Map<String, Integer> scores;
     private Gson gson;
+    private NotificationServer notificationServer;
 
-    public QuizHandler() {
+    public QuizHandler(NotificationServer notificationServer) {
+        this.notificationServer = notificationServer;
         this.quizzes = new ConcurrentHashMap<>();
         this.scores = new ConcurrentHashMap<>();
         this.gson = new Gson();
@@ -30,27 +29,26 @@ public class QuizHandler {
     private void initializeQuizzes() {
         // Sample quiz data
         List<Quiz.Question> questions1 = Arrays.asList(
-            new Quiz.Question("What is the capital of France?", 
-                Arrays.asList("London", "Paris", "Berlin", "Madrid"), 1),
-            new Quiz.Question("Which programming language runs on the JVM?", 
-                Arrays.asList("Python", "Java", "C++", "JavaScript"), 1),
-            new Quiz.Question("What does TCP stand for?", 
-                Arrays.asList("Transfer Control Protocol", "Transmission Control Protocol", 
-                             "Transport Communication Protocol", "Technical Control Protocol"), 1)
-        );
-        
+                new Quiz.Question("What is the capital of France?",
+                        Arrays.asList("London", "Paris", "Berlin", "Madrid"), 1),
+                new Quiz.Question("Which programming language runs on the JVM?",
+                        Arrays.asList("Python", "Java", "C++", "JavaScript"), 1),
+                new Quiz.Question("What does TCP stand for?",
+                        Arrays.asList("Transfer Control Protocol", "Transmission Control Protocol",
+                                "Transport Communication Protocol", "Technical Control Protocol"),
+                        1));
+
         List<Quiz.Question> questions2 = Arrays.asList(
-            new Quiz.Question("What is 2 + 2?", 
-                Arrays.asList("3", "4", "5", "6"), 1),
-            new Quiz.Question("What is the largest planet in our solar system?", 
-                Arrays.asList("Mars", "Jupiter", "Saturn", "Neptune"), 1),
-            new Quiz.Question("Who wrote Romeo and Juliet?", 
-                Arrays.asList("Charles Dickens", "William Shakespeare", "Jane Austen", "Mark Twain"), 1)
-        );
-        
+                new Quiz.Question("What is 2 + 2?",
+                        Arrays.asList("3", "4", "5", "6"), 1),
+                new Quiz.Question("What is the largest planet in our solar system?",
+                        Arrays.asList("Mars", "Jupiter", "Saturn", "Neptune"), 1),
+                new Quiz.Question("Who wrote Romeo and Juliet?",
+                        Arrays.asList("Charles Dickens", "William Shakespeare", "Jane Austen", "Mark Twain"), 1));
+
         quizzes.put("QUIZ001", new Quiz("QUIZ001", "General Knowledge Quiz", questions1));
         quizzes.put("QUIZ002", new Quiz("QUIZ002", "Basic Quiz", questions2));
-        
+
         saveQuizzes();
     }
 
@@ -66,8 +64,9 @@ public class QuizHandler {
         File file = new File(Constants.QUIZZES_FILE);
         if (file.exists()) {
             try (FileReader reader = new FileReader(file)) {
-                Map<String, Quiz> loadedQuizzes = gson.fromJson(reader, 
-                    new TypeToken<Map<String, Quiz>>(){}.getType());
+                Map<String, Quiz> loadedQuizzes = gson.fromJson(reader,
+                        new TypeToken<Map<String, Quiz>>() {
+                        }.getType());
                 if (loadedQuizzes != null) {
                     quizzes.putAll(loadedQuizzes);
                 }
@@ -81,7 +80,7 @@ public class QuizHandler {
         try {
             String command = in.readUTF();
             System.out.println("[QUIZ] Command: " + command);
-            
+
             switch (command) {
                 case "LIST_QUIZZES":
                     sendQuizList(out);
@@ -97,6 +96,12 @@ public class QuizHandler {
                     ObjectInputStream ois = new ObjectInputStream(in);
                     int[] answers = (int[]) ois.readObject();
                     int score = calculateScore(submittedQuizId, answers);
+
+                    // Notification
+                    if (notificationServer != null) {
+                        notificationServer.sendNotification("QUIZ: " + submittedQuizId + "Score: " + score);
+                    }
+
                     scores.put(userId, score);
                     out.writeInt(score);
                     out.flush();
@@ -125,8 +130,9 @@ public class QuizHandler {
 
     private int calculateScore(String quizId, int[] answers) {
         Quiz quiz = quizzes.get(quizId);
-        if (quiz == null) return 0;
-        
+        if (quiz == null)
+            return 0;
+
         int score = 0;
         List<Quiz.Question> questions = quiz.getQuestions();
         for (int i = 0; i < Math.min(answers.length, questions.size()); i++) {

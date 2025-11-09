@@ -1,5 +1,6 @@
 package com.netQuiz.server.handlers;
 
+import com.netQuiz.server.notification.NotificationServer;
 import com.netQuiz.shared.Constants;
 import com.netQuiz.shared.FileInfo;
 
@@ -11,14 +12,12 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Member 2 – File Sharing Module Handler
- * Handles file upload/download requests through unified server port
- */
 public class FileHandler {
     private Path filesDirectory;
+    private NotificationServer notificationServer;
 
-    public FileHandler() {
+    public FileHandler(NotificationServer notificationServer) {
+        this.notificationServer = notificationServer;
         this.filesDirectory = Paths.get(Constants.FILES_DIRECTORY);
         createFilesDirectory();
     }
@@ -60,25 +59,30 @@ public class FileHandler {
         String uploader = in.readUTF();
         long fileSize = in.readLong();
 
+        // Notification
+        if (notificationServer != null) {
+            notificationServer.sendNotification(fileName + " is uploaded by " + uploader);
+        }
+
         File file = filesDirectory.resolve(fileName).toFile();
-        
+
         try (FileOutputStream fos = new FileOutputStream(file);
-             BufferedOutputStream bos = new BufferedOutputStream(fos)) {
+                BufferedOutputStream bos = new BufferedOutputStream(fos)) {
 
             byte[] buffer = new byte[Constants.BUFFER_SIZE];
             long totalBytesRead = 0;
             int bytesRead;
 
-            while (totalBytesRead < fileSize && (bytesRead = in.read(buffer, 0, 
+            while (totalBytesRead < fileSize && (bytesRead = in.read(buffer, 0,
                     (int) Math.min(buffer.length, fileSize - totalBytesRead))) != -1) {
                 bos.write(buffer, 0, bytesRead);
                 totalBytesRead += bytesRead;
             }
 
             bos.flush();
-            System.out.println("[FILE] Uploaded: " + fileName + " by " + uploader + 
-                               " (" + fileSize + " bytes)");
-            
+            System.out.println("[FILE] Uploaded: " + fileName + " by " + uploader +
+                    " (" + fileSize + " bytes)");
+
             out.writeUTF("SUCCESS");
             out.flush();
         } catch (IOException e) {
@@ -104,7 +108,7 @@ public class FileHandler {
         out.flush();
 
         try (FileInputStream fis = new FileInputStream(file);
-             BufferedInputStream bis = new BufferedInputStream(fis)) {
+                BufferedInputStream bis = new BufferedInputStream(fis)) {
 
             byte[] buffer = new byte[Constants.BUFFER_SIZE];
             int bytesRead;
